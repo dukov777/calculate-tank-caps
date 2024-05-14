@@ -7,7 +7,7 @@ This document specifies the requirements for the Tank Capacitor Group calculatio
 **2. Functional Requirements**
 
 2.1 **User Input**
-- FR-01: The software shall allow the user to input the type of capacitors per capacitor, where capacitors are enumerated as:
+- FR-01: The software shall allow the user to input the type of capacitors. The capacitors are enumerated and passeed as command line parameters as follows:
     for capacitor group 1:
         
         ` "--c1", "--c2", "--c3", "--c4", "--c5" `
