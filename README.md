@@ -1,7 +1,12 @@
 # calculate-tank-caps
 Tank capacitor bank calculation software in C++.
 
-# Install
+## Requirements
+
+[Software Requirement Specification](SoftwareRequirementSpecification.md)
+
+
+## Install
 1. Clone the repo
 2. Get the submodules
 
