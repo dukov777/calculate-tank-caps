@@ -7,7 +7,6 @@
 #include "MonitorDecorator.hpp"
 #include "TankCalculator.hpp"
 
-
 TankCalculator::TankCalculator(std::vector<CapacitorSpecification> &specs)
 {
     for (auto &spec : specs)

@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-
 struct CapacitorSpecification
 {
     float capacitance;
@@ -57,7 +56,6 @@ public:
     virtual ~CapacitorBase() {}
 };
 
-
 class Capacitor : public CapacitorBase
 {
 public:
@@ -73,7 +71,7 @@ class SerialCapacitors : public CapacitorBase
 private:
     std::vector<std::unique_ptr<CapacitorInterface>> caps;
 
-    float totalCapacitanceSeries();
+    float total_capacitance();
 
 public:
     SerialCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps);
@@ -81,14 +79,14 @@ public:
     ~SerialCapacitors() {}
 };
 
-
 class ParallelCapacitors : public CapacitorBase
 {
 private:
     std::vector<std::unique_ptr<CapacitorInterface>> caps;
-    float totalCapacitanceParallel();
+    float total_capacitance();
+
 public:
     ParallelCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps);
     void calculate(float frequency, float current) override;
-    ~ParallelCapacitors() {};
+    ~ParallelCapacitors(){};
 };

@@ -7,7 +7,6 @@
 
 #include "Capacitors.hpp"
 
-
 class TankCalculator
 {
     std::unordered_map<std::string, std::unique_ptr<CapacitorSpecification>> stored_specs;
