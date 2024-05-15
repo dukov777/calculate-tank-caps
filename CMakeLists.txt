@@ -3,7 +3,13 @@ project(MyJsonApp)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(calculate-tank-caps main.cpp)
+# create list with source files
+set(SOURCE_FILES
+    main.cpp 
+    calculate-capacitors.cpp
+        )
+# compile the source files
+add_executable(calculate-tank-caps ${SOURCE_FILES})
 
 # Include the JSON library
 include_directories(${CMAKE_SOURCE_DIR}/argparse/include/)

@@ -5,6 +5,8 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
+#include "calculate-capacitors.hpp"
+
 using json = nlohmann::json;
 
 struct ProgramData
@@ -74,25 +76,15 @@ ProgramData get_commnad_line_params(int argc, char **argv)
     return data;
 }
 
-#include <string>
-
-struct CapacitorSpecification
-{
-    std::string capacitance;
-    std::string current;
-    std::string name;
-    std::string power;
-    std::string voltage;
-};
 
 CapacitorSpecification parseComponent(const json &j)
 {
     CapacitorSpecification comp;
-    comp.capacitance = j.at("capacitance").get<std::string>();
-    comp.current = j.at("current").get<std::string>();
+    comp.capacitance = j.at("capacitance").get<float>();
+    comp.current = j.at("current").get<float>();
     comp.name = j.at("name").get<std::string>();
-    comp.power = j.at("power").get<std::string>();
-    comp.voltage = j.at("voltage").get<std::string>();
+    comp.power = j.at("power").get<float>();
+    comp.voltage = j.at("voltage").get<float>();
     return comp; // Use std::move to enable move semantics
 }
 
@@ -155,32 +147,12 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    // Output the data just for clarity
-    std::cout << "i: " << data.i << std::endl;
-    std::cout << "f: " << data.f << std::endl;
-
-    std::cout << "group1: ";
-    for (auto &v : data.group1)
-    {
-        std::cout << v << " ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "group2: ";
-    for (auto &v : data.group2)
-    {
-        std::cout << v << " ";
-    }
-    std::cout << std::endl;
-
     std::vector<CapacitorSpecification> capacitor_spec = parseCapacitorSpecifications(data.capacitor_spec_file);
 
-    // Output the data just for verification
-    std::cout << "Components Loaded:" << std::endl;
-    for (const auto &comp : capacitor_spec)
-    {
-        std::cout << "Name: " << comp.name << ", Voltage: " << comp.voltage << ", Current: " << comp.current << ", Power: " << comp.power << std::endl;
-    }
-
+    // Calculate the tank capacitors
+    TankCalculator tank_calculator(capacitor_spec);
+    tank_calculator.calculate_capacitors_tank(data.f, data.i, data.group1, data.group2);
+    
+    
     return 0;
 }
