@@ -1,6 +1,6 @@
-_Pragma("once");
+#pragma once
+
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 
@@ -91,17 +91,4 @@ public:
     ParallelCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps);
     void calculate(float frequency, float current) override;
     ~ParallelCapacitors() {};
-};
-
-class TankCalculator
-{
-    std::unordered_map<std::string, std::unique_ptr<CapacitorSpecification>> stored_specs;
-
-public:
-    TankCalculator(std::vector<CapacitorSpecification> &specs);
-    void calculate_capacitors_tank(
-        float frequency,
-        float current,
-        std::vector<std::string> &group1,
-        std::vector<std::string> &group2);
 };

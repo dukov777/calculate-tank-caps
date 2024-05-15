@@ -1,11 +1,7 @@
-#include <iostream>
 #include <vector>
-#include <memory> // Include for smart pointers
 #include <numeric>
-#include <unordered_map>
 
-#include "calculate-capacitors.hpp"
-
+#include "Capacitors.hpp"
 
 
 float CapacitorBase::calculate_xc(float frequency)
@@ -180,102 +176,4 @@ void ParallelCapacitors::calculate(float frequency, float current)
     this->power = total_power;
     this->xc = total_xc;
     this->current = current;
-}
-
-
-class CurrentMonitorDecorator : public CapacitorInterface
-{
-private:
-    std::unique_ptr<CapacitorInterface> cap;
-
-public:
-    CurrentMonitorDecorator(std::unique_ptr<CapacitorInterface> cap)
-        : cap(std::move(cap)) {}
-
-    void calculate(float frequency, float current) override
-    {
-        cap->calculate(frequency, current);
-        std::cout << "Capacitor: " << cap->get_name()
-                  << ", Current: " << cap->get_current()
-                  << ", Voltage: " << cap->get_voltage()
-                  << ", Power: " << cap->get_power()
-                  << "\n";
-        
-        if (cap->get_current() > cap->get_spec().current)
-        {
-            // Message format is Warning: Overcurrent condition on capacitor group 1. The current is 1100A, which exceeds the maximum current of 100A!
-            std::cout << "Warning: Overcurrent condition on " << cap->get_name() << ". The current is " << cap->get_current() << "A, which exceeds the maximum current of " << cap->get_spec().current << "A!\n";
-        }
-        if (cap->get_voltage() > cap->get_spec().voltage)
-        {
-            // Message format is Warning: Overvoltage condition on capacitor group 1. The voltage is 1100V, which exceeds the maximum voltage of 100V!
-            std::cout << "Warning: Overvoltage condition on " << cap->get_name() << ". The voltage is " << cap->get_voltage() << "V, which exceeds the maximum voltage of " << cap->get_spec().voltage << "V!\n";
-        }
-
-        if(cap->get_power() > cap->get_spec().power)
-        {
-            std::cout << "Warning: Overpower condition on " << cap->get_name() << ". The power is " << cap->get_power() << "W, which exceeds the maximum power of " << cap->get_spec().power << "W!\n";
-        }
-    }
-
-    std::string get_name() override { return cap->get_name(); }
-    float get_current() override { return cap->get_current(); }
-    float get_voltage() override { return cap->get_voltage(); }
-    float get_power() override { return cap->get_power(); }
-    float get_capacitance() override { return cap->get_capacitance(); }
-    float get_xc() override { return cap->get_xc(); }
-    CapacitorSpecification get_spec() override { return cap->get_spec(); }
-    virtual float calculate_xc(float frequency) override { return cap->calculate_xc(frequency); }
-
-    ~CurrentMonitorDecorator() {}
-};
-
-TankCalculator::TankCalculator(std::vector<CapacitorSpecification> &specs)
-{
-    for (auto &spec : specs)
-    {
-        stored_specs[spec.name] = std::make_unique<CapacitorSpecification>(spec);
-    }
-}
-
-void TankCalculator::calculate_capacitors_tank(
-    float frequency,
-    float current,
-    std::vector<std::string> &group1,
-    std::vector<std::string> &group2)
-{
-    std::vector<std::unique_ptr<CapacitorInterface>> caps1;
-    std::vector<std::unique_ptr<CapacitorInterface>> caps2;
-
-    for (auto &name : group1)
-    {
-        caps1.push_back(
-            std::make_unique<CurrentMonitorDecorator>(
-                std::make_unique<Capacitor>(
-                    stored_specs[name]->name,
-                    stored_specs[name]->capacitance,
-                    stored_specs[name]->voltage,
-                    stored_specs[name]->current,
-                    stored_specs[name]->power)));
-    }
-
-    for (auto &name : group2)
-    {
-        caps2.push_back(
-            std::make_unique<CurrentMonitorDecorator>(
-                std::make_unique<Capacitor>(
-                    stored_specs[name]->name,
-                    stored_specs[name]->capacitance,
-                    stored_specs[name]->voltage,
-                    stored_specs[name]->current,
-                    stored_specs[name]->power)));
-    }
-
-    std::vector<std::unique_ptr<CapacitorInterface>> serials;
-    // serials.push_back(std::make_unique<CurrentMonitorDecorator>(std::make_unique<SerialCapacitors>("Serial 1", std::move(caps1))));
-    serials.push_back(std::make_unique<CurrentMonitorDecorator>(std::make_unique<ParallelCapacitors>("group1", std::move(caps1))));
-    serials.push_back(std::make_unique<CurrentMonitorDecorator>(std::make_unique<ParallelCapacitors>("group2", std::move(caps2))));
-
-    auto serial_tank = std::make_unique<CurrentMonitorDecorator>(std::make_unique<SerialCapacitors>("Tank Circuit Example", std::move(serials)));
-    serial_tank->calculate(frequency, current);
 }

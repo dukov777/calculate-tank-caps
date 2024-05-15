@@ -5,7 +5,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-#include "calculate-capacitors.hpp"
+#include "TankCalculator.hpp"
 
 using json = nlohmann::json;
 
