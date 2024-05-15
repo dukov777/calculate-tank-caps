@@ -15,7 +15,7 @@ This document specifies the requirements for the Tank Capacitor Group calculatio
   <app> -group1 23uF_500V 1uF_500V -group2 23uF_500V 10uF_500V
   ```
 
-- FR-02: The software shall allow the user to choose how many capacitors they require per group. Allowed range is minimum 1 and maximum 5.
+- FR-02: The software shall allow the user to choose how many capacitors they require per group. The allowed range is a minimum of 1 to a maximum of 5.
 
 - FR-03: The software shall allow the user to input the frequency of the current source A:
   ```shell
@@ -27,24 +27,17 @@ This document specifies the requirements for the Tank Capacitor Group calculatio
   <app> -i 1.5
   ```
 
-- FR-05: The software shall read the type of capacitors from a JSON encoded file. The file format is as:
+- FR-05: The software shall read the type of capacitors from a JSON-encoded file. All the real numbers are in the SI system. The capacitors are in Farads; for example, a capacitor of 10uF is represented as 10e-6. The file format is as:
     ```JSON
-    [
+      [
         {
-            "name": "1uF_1000V",
-            "capacitance": "1uF",
-            "voltage": "1000V",
-            "current": "500A",
-            "power": "500kVA"
-        },
-        {
-            "name": "23uF_500V",
-            "capacitance": "23uF",
-            "voltage": "500V",
-            "current": "1000A",
-            "power": "500kVA"
+          "name": "23uF_500V",
+          "capacitance": 23e-6,
+          "voltage": 500,
+          "current": 1000,
+          "power": 500e+3
         }
-    ]
+      ]
 
     ```
 
@@ -53,13 +46,13 @@ This document specifies the requirements for the Tank Capacitor Group calculatio
 **2.2 Calculations**
 - FR-07: The software shall calculate the RMS current through each capacitor.
 - FR-08: The software shall calculate the RMS voltage across each capacitor.
-- FR-09: The software shall calculate the maximum RMS value of the allowable current, voltage, and reactive power through the tank capacitor group, considering allowed current, voltage, and reactive power.
+- FR-09: The software shall calculate the maximum RMS value of the allowable current, voltage, and reactive power through the tank capacitor group, considering the allowed current, voltage, and reactive power.
 
 
 **2.3 Output**
 - FR-10: The software shall display the RMS current through each capacitor.
 - FR-11: The software shall display the RMS voltage across each capacitor.
-- FR-12: The software shall display the maximum RMS value of the allowable current through the tank capacitor group. A warning message should be displayed if any capacitor parameters are exceeded. The warning should explicitly state which capacitors group and parameters have been exceeded.
+- FR-12: The software shall display the maximum RMS value of the allowable current through the tank capacitor group. A warning message should be displayed if any capacitor parameters are exceeded. The warning should explicitly state which capacitor group and parameters have been exceeded.
 
     Example warnings:
     ```shell
