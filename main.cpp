@@ -2,6 +2,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 
 struct ProgramData
@@ -64,6 +68,26 @@ ProgramData get_commnad_line_params(int argc, char **argv)
     return data;
 }
 
+#include <string>
+
+struct Component {
+    std::string capacitance;
+    std::string current;
+    std::string name;
+    std::string power;
+    std::string voltage;
+};
+
+Component parseComponent(const json& j) {
+    Component comp;
+    comp.capacitance = j.at("capacitance").get<std::string>();
+    comp.current = j.at("current").get<std::string>();
+    comp.name = j.at("name").get<std::string>();
+    comp.power = j.at("power").get<std::string>();
+    comp.voltage = j.at("voltage").get<std::string>();
+    return comp; // Use std::move to enable move semantics
+}
+
 int main(int argc, char **argv)
 {
     // get the command line parameters
@@ -98,6 +122,38 @@ int main(int argc, char **argv)
         std::cout << v << " ";
     }
     std::cout << std::endl;
+
+
+    std::ifstream file("data.json");
+    if (!file.is_open()) {
+        std::cerr << "Could not open the file." << std::endl;
+        return 1;
+    }
+
+    json jsonData;
+    try {
+        file >> jsonData;
+    } catch (json::parse_error& e) {
+        std::cerr << "JSON parse error: " << e.what() << std::endl;
+        return 1;
+    }
+
+    std::vector<Component> components;
+    try {
+        for (const auto& item : jsonData) {
+            components.emplace_back(parseComponent(item));
+        }
+    } catch (json::exception& e) {
+        std::cerr << "Error parsing components: " << e.what() << std::endl;
+        return 1;
+    }
+    
+    // Output the data just for verification
+    std::cout << "Components Loaded:" << std::endl;
+    for (const auto& comp : components) {
+        std::cout << "Name: " << comp.name << ", Voltage: " << comp.voltage << ", Current: " << comp.current << ", Power: " << comp.power << std::endl;
+    }
+
 
     return 0;
 }

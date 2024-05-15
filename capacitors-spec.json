@@ -1,0 +1,37 @@
+    [
+    {
+        "name": "1uF_1000V",
+        "capacitance": "1uF",
+        "voltage": "1000V",
+        "current": "500A",
+        "power": "500kVA"
+    },
+    {
+        "name": "3.3uF_800V",
+        "capacitance": "3.3uF",
+        "voltage": "800V",
+        "current": "600A",
+        "power": "500kVA"
+    },
+    {
+        "name": "6uF_750V",
+        "capacitance": "6uF",
+        "voltage": "750V",
+        "current": "750A",
+        "power": "500kVA"
+    },
+    {
+        "name": "10uF_600V",
+        "capacitance": "10uF",
+        "voltage": "600V",
+        "current": "800A",
+        "power": "500kVA"
+    },
+    {
+        "name": "23uF_500V",
+        "capacitance": "23uF",
+        "voltage": "500V",
+        "current": "1000A",
+        "power": "500kVA"
+    }
+    ]
