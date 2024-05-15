@@ -7,3 +7,4 @@ add_executable(calculate-tank-caps main.cpp)
 
 # Include the JSON library
 include_directories(${CMAKE_SOURCE_DIR}/argparse/include/)
+include_directories(${CMAKE_SOURCE_DIR}/json/include/)

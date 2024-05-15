@@ -2,7 +2,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
 
 struct ProgramData
 {
@@ -10,6 +13,7 @@ struct ProgramData
     float f;
     std::vector<std::string> group1;
     std::vector<std::string> group2;
+    std::string capacitor_spec_file;
 };
 
 ProgramData get_commnad_line_params(int argc, char **argv)
@@ -42,6 +46,10 @@ ProgramData get_commnad_line_params(int argc, char **argv)
         .action([](const std::string &value)
                 { return value; });
 
+    program.add_argument("-spec")
+        .help("Path to capacitor specification file")
+        .default_value(std::string("capacitors-spec.json"));
+
     try
     {
         // Parse the command line arguments
@@ -61,7 +69,72 @@ ProgramData get_commnad_line_params(int argc, char **argv)
     data.group1 = program.get<std::vector<std::string>>("-group1");
     data.group2 = program.get<std::vector<std::string>>("-group2");
 
+    data.capacitor_spec_file = program.get<std::string>("-spec");
+
     return data;
+}
+
+#include <string>
+
+struct CapacitorSpecification
+{
+    std::string capacitance;
+    std::string current;
+    std::string name;
+    std::string power;
+    std::string voltage;
+};
+
+CapacitorSpecification parseComponent(const json &j)
+{
+    CapacitorSpecification comp;
+    comp.capacitance = j.at("capacitance").get<std::string>();
+    comp.current = j.at("current").get<std::string>();
+    comp.name = j.at("name").get<std::string>();
+    comp.power = j.at("power").get<std::string>();
+    comp.voltage = j.at("voltage").get<std::string>();
+    return comp; // Use std::move to enable move semantics
+}
+
+
+std::vector<CapacitorSpecification> parseCapacitorSpecifications(const std::string &filepath)
+{
+    std::vector<CapacitorSpecification> capacitor_spec;
+
+    // read the capacitor specification file
+    std::ifstream file(filepath);
+    if (!file.is_open())
+    {
+        std::cerr << "Error: Could not open capacitor specification file." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // parse the json data
+    json json_data;
+    try
+    {
+        file >> json_data;
+    }
+    catch (json::parse_error &e)
+    {
+        std::cerr << "JSON parse error: " << e.what() << std::endl;
+        return capacitor_spec;
+    }
+
+    try
+    {
+        for (const auto &item : json_data)
+        {
+            capacitor_spec.emplace_back(parseComponent(item));
+        }
+    }
+    catch (json::exception &e)
+    {
+        std::cerr << "Error parsing capacitor specification file: " << e.what() << std::endl;
+        return capacitor_spec;
+    }
+
+    return capacitor_spec;
 }
 
 int main(int argc, char **argv)
@@ -85,6 +158,7 @@ int main(int argc, char **argv)
     // Output the data just for clarity
     std::cout << "i: " << data.i << std::endl;
     std::cout << "f: " << data.f << std::endl;
+
     std::cout << "group1: ";
     for (auto &v : data.group1)
     {
@@ -98,6 +172,15 @@ int main(int argc, char **argv)
         std::cout << v << " ";
     }
     std::cout << std::endl;
+
+    std::vector<CapacitorSpecification> capacitor_spec = parseCapacitorSpecifications(data.capacitor_spec_file);
+
+    // Output the data just for verification
+    std::cout << "Components Loaded:" << std::endl;
+    for (const auto &comp : capacitor_spec)
+    {
+        std::cout << "Name: " << comp.name << ", Voltage: " << comp.voltage << ", Current: " << comp.current << ", Power: " << comp.power << std::endl;
+    }
 
     return 0;
 }
