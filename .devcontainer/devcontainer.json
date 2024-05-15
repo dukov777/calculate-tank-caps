@@ -1,0 +1,18 @@
+{
+	"image": "mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04",
+	"features": {
+		"ghcr.io/stuartleeks/dev-container-features/shell-history:0": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.cpptools",
+				"twxs.cmake",
+				"ms-vscode.cmake-tools",
+				"GitHub.copilot",
+				"GitHub.copilot-chat",
+				"ms-vscode.cpptools-extension-pack"
+			]
+		}
+	}
+}
