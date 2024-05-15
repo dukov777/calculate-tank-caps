@@ -6,49 +6,7 @@
 
 #include "calculate-capacitors.hpp"
 
-class CapacitorInterface
-{
-public:
-    virtual void calculate(float frequency, float current) = 0;
-    virtual float calculate_xc(float frequency) = 0;
-    virtual ~CapacitorInterface() {}
-    virtual std::string get_name() = 0;
-    virtual float get_current() = 0;
-    virtual float get_voltage() = 0;
-    virtual float get_power() = 0;
-    virtual float get_capacitance() = 0;
-    virtual float get_xc() = 0;
-    virtual CapacitorSpecification get_spec() = 0;
-};
 
-class CapacitorBase : public CapacitorInterface
-{
-protected:
-    std::string name;
-    float capacitance;
-    float max_voltage;
-    float max_current;
-    float max_power;
-
-    float xc;
-    float current;
-    float voltage;
-    float power;
-
-public:
-    CapacitorBase(const std::string &name, float capacitance, float max_voltage, float max_current, float max_power)
-        : name(name), capacitance(capacitance), max_voltage(max_voltage), max_current(max_current), max_power(max_power) {}
-
-    std::string get_name() override { return name; }
-    float get_current() override { return current; }
-    float get_voltage() override { return voltage; }
-    float get_power() override { return power; }
-    float get_capacitance() override { return capacitance; }
-    float get_xc() override { return xc; }
-    CapacitorSpecification get_spec() override { return CapacitorSpecification{capacitance, max_current, name, max_power, max_voltage}; }
-    float calculate_xc(float frequency) override;
-    virtual ~CapacitorBase() {}
-};
 
 float CapacitorBase::calculate_xc(float frequency)
 {
@@ -56,200 +14,173 @@ float CapacitorBase::calculate_xc(float frequency)
     return xc;
 }
 
-
-class Capacitor : public CapacitorBase
+void Capacitor::calculate(float frequency, float current)
 {
-public:
-    Capacitor(const std::string &name, float capacitance, float max_voltage, float max_current, float max_power)
-        : CapacitorBase(name, capacitance, max_voltage, max_current, max_power) {}
+    xc = calculate_xc(frequency);
+    voltage = xc * current;
+    power = voltage * current;
+    this->current = current;
+}
 
-    void calculate(float frequency, float current) override
-    {
-        xc = calculate_xc(frequency);
-        voltage = xc * current;
-        power = voltage * current;
-        this->current = current;
-    }
-
-
-    ~Capacitor() {}
-};
-
-class SerialCapacitors : public CapacitorBase
+float SerialCapacitors::totalCapacitanceSeries()
 {
-private:
-    std::vector<std::unique_ptr<CapacitorInterface>> caps;
-
-    float totalCapacitanceSeries()
+    float inverseTotal = 0.0;
+    for (auto &cap : this->caps)
     {
-        float inverseTotal = 0.0;
-        for (auto &cap : this->caps)
+        if (cap->get_capacitance() != 0)
         {
-            if (cap->get_capacitance() != 0)
-            {
-                inverseTotal += 1.0 / cap->get_capacitance();
-            }
+            inverseTotal += 1.0 / cap->get_capacitance();
         }
-
-        if (inverseTotal == 0.0)
-        {
-            return 0.0;
-        }
-
-        return 1.0 / inverseTotal;
     }
 
-public:
-    SerialCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps)
-        : CapacitorBase(name, 0, 0, 0, 0)
+    if (inverseTotal == 0.0)
     {
-        this->caps = std::move(caps);
-
-        capacitance = totalCapacitanceSeries();
-
-        // calculate the allowed maximum current through the group.
-        // Maximum current is equal to the capacitor in the series with the smallest allowed current.
-        max_current = (*std::min_element(
-            this->caps.begin(), 
-            this->caps.end(),
-            [](const auto &a, const auto &b)
-            {
-                return a->get_spec().current < b->get_spec().current;
-            }))->get_spec().current;
-
-        // For series of capacitors the total allowed voltage is the sum of all capacitors maximum voltage
-        max_voltage = std::accumulate(
-            this->caps.begin(), 
-            this->caps.end(),
-            0.0,
-            [](const auto &a, const auto &b)
-            {
-                return a + b->get_spec().voltage;
-            });
-
-        // For series of capacitors the total allowed power is the sum of all capacitors maximum power
-        max_power = std::accumulate(
-            this->caps.begin(), 
-            this->caps.end(),
-            0.0,
-            [](const auto &a, const auto &b)
-            {
-                return a + b->get_spec().power;
-            });
+        return 0.0;
     }
 
-    void calculate(float frequency, float current) override
-    {
-        float total_voltage = 0;
-        float total_power = 0;
-        float total_xc = 0;
-
-        for (auto &cap : caps)
-        {
-            cap->calculate(frequency, current);
-            total_voltage += cap->get_voltage();
-            total_power += cap->get_power();
-            total_xc += cap->get_xc();
-        }
-
-        this->voltage = total_voltage;
-        this->power = total_power;
-        this->xc = total_xc;
-        this->current = current;
-    }
-
-    ~SerialCapacitors() {}
-};
+    return 1.0 / inverseTotal;
+}
 
 
-class ParallelCapacitors : public CapacitorBase
+SerialCapacitors::SerialCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps)
+    : CapacitorBase(name, 0, 0, 0, 0)
 {
-private:
-    std::vector<std::unique_ptr<CapacitorInterface>> caps;
+    this->caps = std::move(caps);
 
-    float totalCapacitanceParallel()
-    {
-        return std::accumulate(
-            this->caps.begin(), 
-            this->caps.end(),
-            0.0,
-            [](const auto &a, const auto &b)
-            {
-                return a + b->get_capacitance();
-            });
-    }
+    capacitance = totalCapacitanceSeries();
 
-public:
-    ParallelCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps)
-        : CapacitorBase(name, 0, 0, 0, 0)
-    {
-        this->caps = std::move(caps);
-
-        capacitance = totalCapacitanceParallel();
-
-        // calculate the allowed maximum current through the group.
-        // Maximum current is equal to the sum of each capacitor max current.
-        max_current = std::accumulate(
-            this->caps.begin(), 
-            this->caps.end(),
-            0.0,
-            [](const auto &a, const auto &b)
-            {
-                return a + b->get_spec().current;
-            });
-        
-        // For parallel capacitor circuit the maximum allowed voltage is the smallest maximum voltage of a capacitor in the group
-        max_voltage = (*std::min_element(
-            this->caps.begin(), 
-            this->caps.end(),
-            [](const auto &a, const auto &b)
-            {
-                return a->get_spec().voltage < b->get_spec().voltage;
-            }))->get_spec().voltage;
-
-        // For parallel capacitor circuit the total allowed power is the sum of all capacitors maximum power
-        max_power = std::accumulate(
-            this->caps.begin(), 
-            this->caps.end(),
-            0.0,
-            [](const auto &a, const auto &b)
-            {
-                return a + b->get_spec().power;
-            });
-    }
-
-    void calculate(float frequency, float current) override
-    {
-        float total_voltage = 0;
-        float total_power = 0;
-        float total_xc = 0;
-        float total_reciprocal_xc = 0;
-
-        for (auto &cap : caps)
+    // calculate the allowed maximum current through the group.
+    // Maximum current is equal to the capacitor in the series with the smallest allowed current.
+    max_current = (*std::min_element(
+        this->caps.begin(), 
+        this->caps.end(),
+        [](const auto &a, const auto &b)
         {
-            total_reciprocal_xc += 1 / cap->calculate_xc(frequency);
-        }
+            return a->get_spec().current < b->get_spec().current;
+        }))->get_spec().current;
 
-        total_xc = 1 / total_reciprocal_xc;      // Total reactance of the parallel group
+    // For series of capacitors the total allowed voltage is the sum of all capacitors maximum voltage
+    max_voltage = std::accumulate(
+        this->caps.begin(), 
+        this->caps.end(),
+        0.0,
+        [](const auto &a, const auto &b)
+        {
+            return a + b->get_spec().voltage;
+        });
 
-        total_voltage = current * total_xc;     // Voltage across capacitors
+    // For series of capacitors the total allowed power is the sum of all capacitors maximum power
+    max_power = std::accumulate(
+        this->caps.begin(), 
+        this->caps.end(),
+        0.0,
+        [](const auto &a, const auto &b)
+        {
+            return a + b->get_spec().power;
+        });
+}
 
-        // once we have the voltage over parallel capacitors, we can calculate the current across each capacitor
-        for (auto &cap : caps)
-        {   
-            // Calculate the current through each capacitor in the parallel group
-            auto _current = total_voltage / cap->get_xc();
-            // Calculate the voltage across each capacitor in the parallel group
-            cap->calculate(frequency, _current);
-            total_power += cap->get_power();
-        }
+void SerialCapacitors::calculate(float frequency, float current)
+{
+    float total_voltage = 0;
+    float total_power = 0;
+    float total_xc = 0;
 
-        this->voltage = total_voltage;
-        this->power = total_power;
-        this->xc = total_xc;
-        this->current = current;
+    for (auto &cap : caps)
+    {
+        cap->calculate(frequency, current);
+        total_voltage += cap->get_voltage();
+        total_power += cap->get_power();
+        total_xc += cap->get_xc();
     }
-};
+
+    this->voltage = total_voltage;
+    this->power = total_power;
+    this->xc = total_xc;
+    this->current = current;
+}
+
+float ParallelCapacitors::totalCapacitanceParallel()
+{
+    return std::accumulate(
+        this->caps.begin(), 
+        this->caps.end(),
+        0.0,
+        [](const auto &a, const auto &b)
+        {
+            return a + b->get_capacitance();
+        });
+}
+
+ParallelCapacitors::ParallelCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps)
+    : CapacitorBase(name, 0, 0, 0, 0)
+{
+    this->caps = std::move(caps);
+
+    capacitance = totalCapacitanceParallel();
+
+    // calculate the allowed maximum current through the group.
+    // Maximum current is equal to the sum of each capacitor max current.
+    max_current = std::accumulate(
+        this->caps.begin(), 
+        this->caps.end(),
+        0.0,
+        [](const auto &a, const auto &b)
+        {
+            return a + b->get_spec().current;
+        });
+    
+    // For parallel capacitor circuit the maximum allowed voltage is the smallest maximum voltage of a capacitor in the group
+    max_voltage = (*std::min_element(
+        this->caps.begin(), 
+        this->caps.end(),
+        [](const auto &a, const auto &b)
+        {
+            return a->get_spec().voltage < b->get_spec().voltage;
+        }))->get_spec().voltage;
+
+    // For parallel capacitor circuit the total allowed power is the sum of all capacitors maximum power
+    max_power = std::accumulate(
+        this->caps.begin(), 
+        this->caps.end(),
+        0.0,
+        [](const auto &a, const auto &b)
+        {
+            return a + b->get_spec().power;
+        });
+}
+
+void ParallelCapacitors::calculate(float frequency, float current)
+{
+    float total_voltage = 0;
+    float total_power = 0;
+    float total_xc = 0;
+    float total_reciprocal_xc = 0;
+
+    for (auto &cap : caps)
+    {
+        total_reciprocal_xc += 1 / cap->calculate_xc(frequency);
+    }
+
+    total_xc = 1 / total_reciprocal_xc;      // Total reactance of the parallel group
+
+    total_voltage = current * total_xc;     // Voltage across capacitors
+
+    // once we have the voltage over parallel capacitors, we can calculate the current across each capacitor
+    for (auto &cap : caps)
+    {   
+        // Calculate the current through each capacitor in the parallel group
+        auto _current = total_voltage / cap->get_xc();
+        // Calculate the voltage across each capacitor in the parallel group
+        cap->calculate(frequency, _current);
+        total_power += cap->get_power();
+    }
+
+    this->voltage = total_voltage;
+    this->power = total_power;
+    this->xc = total_xc;
+    this->current = current;
+}
 
 
 class CurrentMonitorDecorator : public CapacitorInterface
@@ -348,33 +279,3 @@ void TankCalculator::calculate_capacitors_tank(
     auto serial_tank = std::make_unique<CurrentMonitorDecorator>(std::make_unique<SerialCapacitors>("Tank Circuit Example", std::move(serials)));
     serial_tank->calculate(frequency, current);
 }
-
-// void calculate_capacitors_tank(float frequency, float current, )
-// {
-//     std::vector<std::unique_ptr<CapacitorInterface>> caps1;
-//     for(auto &spec : specs)
-//     {
-//         caps1.push_back(
-//             std::make_unique<CurrentMonitorDecorator>(
-//             std::make_unique<Capacitor>(spec.name, spec.capacitance, spec.voltage, spec.current, spec.power)));
-//     }
-
-//     caps1.push_back(std::make_unique<CurrentMonitorDecorator>(std::make_unique<Capacitor>("C1", 1e-6, 1000, 100, 500e3)));
-//     caps1.push_back(std::make_unique<CurrentMonitorDecorator>(std::make_unique<Capacitor>("C2", 2e-6, 1000, 100, 500e3)));
-
-//     std::vector<std::unique_ptr<CapacitorInterface>> serials;
-//     serials.push_back(std::make_unique<CurrentMonitorDecorator>(std::make_unique<SerialCapacitors>("Serial 1", std::move(caps1))));
-
-//     std::vector<std::unique_ptr<CapacitorInterface>> caps2;
-//     caps2.push_back(std::make_unique<CurrentMonitorDecorator>(std::make_unique<Capacitor>("C3", 1e-6, 1000, 100, 500e3)));
-//     caps2.push_back(std::make_unique<CurrentMonitorDecorator>(std::make_unique<Capacitor>("C4", 2e-6, 1000, 100, 500e3)));
-//     serials.push_back(std::make_unique<CurrentMonitorDecorator>(std::make_unique<SerialCapacitors>("Serial 2", std::move(caps2))));
-
-//     auto serial_tank = std::make_unique<CurrentMonitorDecorator>(std::make_unique<SerialCapacitors>("Tank Circuit Example", std::move(serials)));
-//     serial_tank->calculate(60, 1);
-
-//     // std::cout << "Total Voltage: " << serial_tank->getVoltage() << "\n";
-//     // std::cout << "Total Power: " << serial_tank->getPower() << "\n";
-//     // std::cout << "Total Xc: " << serial_tank->get_xc() << "\n";
-//     // std::cout << "Total Current: " << serial_tank->getCurrent() << "\n";
-// }
