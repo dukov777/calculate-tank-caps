@@ -5,7 +5,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
-#include "calculate-capacitors.hpp"
+#include "TankCalculator.hpp"
 
 using json = nlohmann::json;
 
@@ -76,8 +76,7 @@ ProgramData get_commnad_line_params(int argc, char **argv)
     return data;
 }
 
-
-CapacitorSpecification parseComponent(const json &j)
+CapacitorSpecification parse_component(const json &j)
 {
     CapacitorSpecification comp;
     comp.capacitance = j.at("capacitance").get<float>();
@@ -88,8 +87,7 @@ CapacitorSpecification parseComponent(const json &j)
     return comp; // Use std::move to enable move semantics
 }
 
-
-std::vector<CapacitorSpecification> parseCapacitorSpecifications(const std::string &filepath)
+std::vector<CapacitorSpecification> parse_capacitor_specifications(const std::string &filepath)
 {
     std::vector<CapacitorSpecification> capacitor_spec;
 
@@ -117,7 +115,7 @@ std::vector<CapacitorSpecification> parseCapacitorSpecifications(const std::stri
     {
         for (const auto &item : json_data)
         {
-            capacitor_spec.emplace_back(parseComponent(item));
+            capacitor_spec.emplace_back(parse_component(item));
         }
     }
     catch (json::exception &e)
@@ -147,12 +145,11 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    std::vector<CapacitorSpecification> capacitor_spec = parseCapacitorSpecifications(data.capacitor_spec_file);
+    std::vector<CapacitorSpecification> capacitor_spec = parse_capacitor_specifications(data.capacitor_spec_file);
 
     // Calculate the tank capacitors
     TankCalculator tank_calculator(capacitor_spec);
     tank_calculator.calculate_capacitors_tank(data.f, data.i, data.group1, data.group2);
-    
-    
+
     return 0;
 }

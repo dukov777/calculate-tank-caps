@@ -1,17 +1,11 @@
-_Pragma("once");
+#pragma once
+
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <memory>
 
-
-struct CapacitorSpecification
-{
-    float capacitance;
-    float current;
-    std::string name;
-    float power;
-    float voltage;
-};
+#include "Capacitors.hpp"
 
 class TankCalculator
 {
