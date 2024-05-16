@@ -15,9 +15,7 @@ TankCalculator::TankCalculator(std::vector<CapacitorSpecification> &specs)
     }
 }
 
-void TankCalculator::calculate_capacitors_tank(
-    float frequency,
-    float current,
+void TankCalculator::compose_capacitors_tank(
     std::vector<std::string> &group1,
     std::vector<std::string> &group2)
 {
@@ -53,6 +51,10 @@ void TankCalculator::calculate_capacitors_tank(
     serials.push_back(std::make_unique<MonitorDecorator>(std::make_unique<ParallelCapacitors>("group1", std::move(caps1))));
     serials.push_back(std::make_unique<MonitorDecorator>(std::make_unique<ParallelCapacitors>("group2", std::move(caps2))));
 
-    auto serial_tank = std::make_unique<MonitorDecorator>(std::make_unique<SerialCapacitors>("Tank Circuit Example", std::move(serials)));
+    serial_tank = std::make_unique<MonitorDecorator>(std::make_unique<SerialCapacitors>("Tank Circuit Example", std::move(serials)));
+}
+
+void TankCalculator::calculate_capacitors_tank(float frequency, float current)
+{
     serial_tank->calculate(frequency, current);
 }

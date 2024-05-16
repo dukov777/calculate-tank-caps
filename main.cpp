@@ -149,7 +149,8 @@ int main(int argc, char **argv)
 
     // Calculate the tank capacitors
     TankCalculator tank_calculator(capacitor_spec);
-    tank_calculator.calculate_capacitors_tank(data.f, data.i, data.group1, data.group2);
+    tank_calculator.compose_capacitors_tank(data.group1, data.group2);
+    tank_calculator.calculate_capacitors_tank(data.f, data.i);
 
     return 0;
 }
