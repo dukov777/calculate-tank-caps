@@ -22,6 +22,7 @@ class CapacitorInterface:
     def voltage(self, f, current): pass
     def spec(self): pass
     def name(self): pass
+    def allowed_current(self, f): pass
     
 
 class Capacitor(CapacitorInterface):
@@ -41,6 +42,8 @@ class Capacitor(CapacitorInterface):
     name = lambda self: self._cap_name
     
     spec = lambda self: self._spec
+
+    allowed_current = lambda self, f: self._spec.get_v_max() / self.xc(f)
     
 
 class ParallelCapacitor(Capacitor):
@@ -64,6 +67,10 @@ class ParallelCapacitor(Capacitor):
         # 1st law of Kirchhoff
         current = sum([cap.current(f, voltage) for cap in self._capacitors])
         return current
+
+    def allowed_current(self, f):
+        vmax = self.spec().get_v_max()
+        return sum([cap.current(f, vmax) for cap in self._capacitors])
     
 
 class SeriesCapacitor(Capacitor):
@@ -87,6 +94,9 @@ class SeriesCapacitor(Capacitor):
         sum_voltages = sum([cap.voltage(f, current) for cap in self._capacitors])
         return sum_voltages
 
+    def allowed_current(self, f):
+        return min([cap.allowed_current(f) for cap in self._capacitors])
+    
 
 class CapacitorMaxCurrentViolationDecoratorBase(CapacitorInterface):
     def __init__(self, cap):
@@ -123,44 +133,6 @@ class ParallelCapacitorMaxCurrentViolationDecorator(CapacitorMaxCurrentViolation
             raise ValueError(f"Current {max_current} exceeds maximum current {spec_max_current} of {self.name()}")
         return max_current
 
-
-class CapacitorAllowedMaxCurrentDecoratorBase(CapacitorInterface):
-    def __init__(self, cap):
-        self.cap = cap
-    
-    def xc(self, f):
-        return self.cap.xc(f)
-    
-    def current(self, f, voltage):
-        return self.cap.current(f, voltage)
-    
-    def voltage(self, f, current):
-        return self.cap.voltage(f, current)
-    
-    def name(self):
-        return self.cap.name()
-    
-    def spec(self):
-        return self.cap.spec()
-
-
-class CapacitorAllowedMaxCurrentDecorator(CapacitorAllowedMaxCurrentDecoratorBase):
-    def allowed_max_current(self, f):
-        vmax = self.spec().get_v_max()
-        return self.current(f, vmax)
-
-
-class ParallelCapacitorsAllowedMaxCurrentDecorator(CapacitorAllowedMaxCurrentDecoratorBase):
-    def allowed_max_current(self, f):
-        vmax = self.spec().get_v_max()
-        return self.current(f, vmax)
-
-
-class SerialCapacitorsAllowedMaxCurrentDecorator(CapacitorAllowedMaxCurrentDecoratorBase):
-    def allowed_max_current(self, f):
-        allowed_imax = min([cap.allowed_max_current(f) for cap in self.cap._capacitors])
-        return allowed_imax
-    
 
 # ##############################################################################
 # Test cases
@@ -304,24 +276,25 @@ class TestCapacitor(unittest.TestCase):
         f = 1
         cap1 = Capacitor(cap_uF=10, vmax=1000, imax=500)
         cap2 = Capacitor(cap_uF=20, vmax=800, imax=600)
-        parallel = ParallelCapacitorsAllowedMaxCurrentDecorator(ParallelCapacitor([cap1, cap2]))
+        parallel = ParallelCapacitor([cap1, cap2])
 
         c = 10 + 20
         xc = 1/(2 * math.pi * f * c*1e-6)
         expected_current = 800/xc
 
-        self.assertAlmostEqual(parallel.allowed_max_current(f), expected_current, places=0)
+        self.assertAlmostEqual(parallel.allowed_current(f), expected_current, places=0)
 
     def test_series_capacitors_allowed_max_current_decorator(self):
         f = 1
-        cap1 = CapacitorAllowedMaxCurrentDecorator(Capacitor(cap_uF=10, vmax=1000, imax=500))
-        cap2 = CapacitorAllowedMaxCurrentDecorator(Capacitor(cap_uF=20, vmax=800, imax=600))
-        series = SerialCapacitorsAllowedMaxCurrentDecorator(SeriesCapacitor([cap1, cap2]))
+        cap1 = Capacitor(cap_uF=10, vmax=1000, imax=500)
+        cap2 = Capacitor(cap_uF=20, vmax=800, imax=600)
+        series = SeriesCapacitor([cap1, cap2])
 
         c = 20
         xc = 1/(2 * math.pi * f * c*1e-6)
         expected_current = 800/xc
 
-        self.assertAlmostEqual(series.allowed_max_current(f), expected_current, places=0)
+        self.assertAlmostEqual(series.allowed_current(f), expected_current, places=0)
+        
         
 unittest.main(argv=[''], exit=False)
