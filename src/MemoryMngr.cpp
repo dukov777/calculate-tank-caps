@@ -10,26 +10,16 @@
 
 #ifdef MEMORYPOOL
 
-struct Dummmy : public CapacitorInterface{
-    // Define a trivial default constructor
-    CapacitorSpec _spec;
-    Dummmy() { }
-    double xc(double f) const override { return 0; }
-    double current(double f, double voltage) const override { return 0; }
-    double allowed_current(double f) const override { return 0; }
-    double voltage(double f, double current) const override { return 0; }
-    const CapacitorSpec& spec() const override { return _spec; }
-    const std::string name() const override { return ""; }
-};
 
 union Capacitors {
     void* address;
-    Dummmy dummy;    
     Capacitor single_capacitor;
-    ParallelCapacitor parallel_capacitor;
+    ParallelCapacitors parallel_capacitor;
+    MonitorDecorator monitor_decorator;
+    SerialCapacitors serial_capacitor;
 
     // Define a default constructor for the union
-    Capacitors() : dummy() {} // Initialize one of the members by default
+    Capacitors() : single_capacitor("", 0, 0, 0, 0) {}
     ~Capacitors() {}
 };
 
@@ -93,51 +83,35 @@ void CapacitorDeleter::operator()(CapacitorInterface* ptr) const
 }
 
 CapacitorPtr
-CapacitorFactory::create_single(double cap_uF, double vmax, double imax, double power_max, std::string cap_name)
+CapacitorFactory::create_single(const std::string &name, float capacitance, float max_voltage, float max_current, float max_power)
 {
     Capacitors& cap = CapacitorsPool::get_instance().get_free_from_pool();
-    new (&cap.single_capacitor) Capacitor(cap_uF, vmax, imax, power_max, cap_name);
+    new (&cap.single_capacitor) Capacitor(name, capacitance, max_voltage, max_current, max_power);
     return CapacitorPtr(&cap.single_capacitor);
 }
 
-CapacitorPtr CapacitorFactory::create_parallel(const std::string &cap_name, CapacitorPtr &cap1)
+CapacitorPtr
+CapacitorFactory::create_parallel(std::string name, std::vector<CapacitorPtr> &&caps)
 {
     Capacitors& cap = CapacitorsPool::get_instance().get_free_from_pool();
-    new (&cap.parallel_capacitor) ParallelCapacitor(cap_name, cap1);
+    new (&cap.parallel_capacitor) ParallelCapacitors(name, std::move(caps));
     return CapacitorPtr(&cap.parallel_capacitor);
 }
 
-CapacitorPtr CapacitorFactory::create_parallel(const std::string &cap_name, CapacitorPtr &cap1, CapacitorPtr &cap2)
+CapacitorPtr
+CapacitorFactory::create_monitor_decorator(CapacitorPtr &&caps)
 {
     Capacitors& cap = CapacitorsPool::get_instance().get_free_from_pool();
-    new (&cap.parallel_capacitor) ParallelCapacitor(cap_name, cap1, cap2);
-    return CapacitorPtr(&cap.parallel_capacitor);
+    new (&cap.monitor_decorator) MonitorDecorator(std::move(caps));
+    return CapacitorPtr(&cap.monitor_decorator);
 }
 
-CapacitorPtr CapacitorFactory::create_parallel(const std::string &cap_name, CapacitorPtr &cap1, CapacitorPtr &cap2, CapacitorPtr &cap3)
+CapacitorPtr
+CapacitorFactory::create_serial(std::string name, std::vector<CapacitorPtr> &&caps)
 {
     Capacitors& cap = CapacitorsPool::get_instance().get_free_from_pool();
-    new (&cap.parallel_capacitor) ParallelCapacitor(cap_name, cap1, cap2, cap3);
-    return CapacitorPtr(&cap.parallel_capacitor);
-}
-
-CapacitorPtr CapacitorFactory::create_parallel(const std::string &cap_name, CapacitorPtr &cap1, CapacitorPtr &cap2, CapacitorPtr &cap3, CapacitorPtr &cap4)
-{
-    Capacitors& cap = CapacitorsPool::get_instance().get_free_from_pool();
-    new (&cap.parallel_capacitor) ParallelCapacitor(cap_name, cap1, cap2, cap3, cap4);
-    return CapacitorPtr(&cap.parallel_capacitor);
-}
-
-CapacitorPtr CapacitorFactory::create_parallel(const std::string &cap_name, CapacitorPtr &cap1, CapacitorPtr &cap2, CapacitorPtr &cap3, CapacitorPtr &cap4, CapacitorPtr &cap5)
-{
-    Capacitors& cap = CapacitorsPool::get_instance().get_free_from_pool();
-    new (&cap.parallel_capacitor) ParallelCapacitor(cap_name, cap1, cap2, cap3, cap4, cap5);
-    return CapacitorPtr(&cap.parallel_capacitor);
-}
-
-CapacitorPtr CapacitorFactory::create_violator_decorator(CapacitorPtr &cap)
-{
-    return CapacitorPtr();
+    new (&cap.serial_capacitor) SerialCapacitors(name, std::move(caps));
+    return CapacitorPtr(&cap.serial_capacitor);
 }
 
 #else

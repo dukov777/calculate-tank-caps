@@ -16,8 +16,11 @@ set(SOURCE_FILES
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
 set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
 
+
 # compile the source files
 add_executable(calculate-tank-caps ${SOURCE_FILES})
+
+target_compile_options(calculate-tank-caps PRIVATE -DMEMORYPOOL)
 
 # Include the JSON library
 include_directories(${CMAKE_SOURCE_DIR}/argparse/include/)
