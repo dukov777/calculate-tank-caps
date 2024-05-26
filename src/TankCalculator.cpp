@@ -2,7 +2,7 @@
 #include <memory>
 #include <numeric>
 #include <unordered_map>
-
+#include <iostream>
 #include "Capacitors.hpp"
 #include "MonitorDecorator.hpp"
 #include "TankCalculator.hpp"
@@ -24,6 +24,12 @@ void TankCalculator::compose_capacitors_tank(
 
     for (auto &name : group1)
     {
+        if(stored_specs.find(name) == stored_specs.end())
+        {
+            std::cerr << "Error: Capacitor " << name << " not found in the specification file." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
         caps1.push_back(
             std::make_unique<MonitorDecorator>(
                 std::make_unique<Capacitor>(
@@ -36,6 +42,12 @@ void TankCalculator::compose_capacitors_tank(
 
     for (auto &name : group2)
     {
+        if(stored_specs.find(name) == stored_specs.end())
+        {
+            std::cerr << "Error: Capacitor " << name << " not found in the specification file." << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
         caps2.push_back(
             std::make_unique<MonitorDecorator>(
                 std::make_unique<Capacitor>(
