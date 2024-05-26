@@ -11,6 +11,11 @@ set(SOURCE_FILES
     src/MonitorDecorator.cpp
     src/MemoryMngr.cpp
 )
+
+# Add -fsanitize=address flag
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
+
 # compile the source files
 add_executable(calculate-tank-caps ${SOURCE_FILES})
 

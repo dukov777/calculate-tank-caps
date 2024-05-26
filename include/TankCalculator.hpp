@@ -12,6 +12,8 @@ class TankCalculator
 {
     std::unordered_map<std::string, std::unique_ptr<CapacitorSpecification>> stored_specs;
     CapacitorPtr serial_tank;
+
+    void _compose_caps(std::vector<std::string> &group1, std::vector<CapacitorPtr> &caps1);
 public:
     TankCalculator(std::vector<CapacitorSpecification> &specs);
     void compose_capacitors_tank(std::vector<std::string> &group1, std::vector<std::string> &group2);
