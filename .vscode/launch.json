@@ -13,31 +13,35 @@
       "miDebuggerPath": "/usr/bin/gdb"
     },
     "configurations": [
-    {
-      "name": "(gdb) Launch",
-      "type": "cppdbg",
-      "request": "launch",
-      "program": "${workspaceFolder}/bin/greet",
-      "args": [],
-      "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/bin/",
-      "environment": [],
-      "externalConsole": false,
-      "MIMode": "gdb",
-      "setupCommands": [
-          {
-              "description": "Enable pretty-printing for gdb",
-              "text": "-enable-pretty-printing",
-              "ignoreFailures": true
-          },
-          {
-              "description": "Set Disassembly Flavor to Intel",
-              "text": "-gdb-set disassembly-flavor intel",
-              "ignoreFailures": true
-          }
-      ],
-      "preLaunchTask": "Prepare for Debug",
-    }
+      {
+        "name": "(gdb) Launch (calculator)",
+        "type": "cppdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}/build/calculate-tank-caps",
+        "args": ["-i", "2", "-f", "60",
+        "-group1", "1uF_1000V", "3.3uF_800V", 
+        "-group2", "1uF_1000V", "3.3uF_800V", 
+        "-spec", "capacitors-spec.json"],
+  
+        "stopAtEntry": false,
+        "cwd": "${workspaceFolder}/",
+        "environment": [],
+        "externalConsole": false,
+        "MIMode": "gdb",
+        "setupCommands": [
+            {
+                "description": "Enable pretty-printing for gdb",
+                "text": "-enable-pretty-printing",
+                "ignoreFailures": true
+            },
+            {
+                "description": "Set Disassembly Flavor to Intel",
+                "text": "-gdb-set disassembly-flavor intel",
+                "ignoreFailures": true
+            }
+        ],
+        "preLaunchTask": "Prepare for Debug",
+      }  
     ]
   }
   
