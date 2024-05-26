@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "Capacitors.hpp"
+#include "MemoryMngr.h"
 
 float CapacitorBase::calculate_xc(float frequency)
 {
@@ -37,7 +38,7 @@ float SerialCapacitors::total_capacitance()
     return 1.0 / inverse_total;
 }
 
-SerialCapacitors::SerialCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps)
+SerialCapacitors::SerialCapacitors(std::string name, std::vector<CapacitorPtr> &&caps)
     : CapacitorBase(name, 0, 0, 0, 0)
 {
     this->caps = std::move(caps);
@@ -109,7 +110,7 @@ float ParallelCapacitors::total_capacitance()
         });
 }
 
-ParallelCapacitors::ParallelCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps)
+ParallelCapacitors::ParallelCapacitors(std::string name, std::vector<CapacitorPtr> &&caps)
     : CapacitorBase(name, 0, 0, 0, 0)
 {
     this->caps = std::move(caps);

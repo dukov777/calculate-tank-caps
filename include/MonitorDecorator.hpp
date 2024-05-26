@@ -3,14 +3,15 @@
 #include <vector>
 
 #include "Capacitors.hpp"
+#include "MemoryMngr.h"
 
 class MonitorDecorator : public CapacitorInterface
 {
 private:
-    std::unique_ptr<CapacitorInterface> cap;
+    CapacitorPtr cap;
 
 public:
-    MonitorDecorator(std::unique_ptr<CapacitorInterface> cap)
+    MonitorDecorator(CapacitorPtr&& cap)
         : cap(std::move(cap)) {}
     void calculate(float frequency, float current) override;
     std::string get_name() override { return cap->get_name(); }

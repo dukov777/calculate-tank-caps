@@ -4,6 +4,8 @@
 #include <vector>
 #include <memory>
 
+#include "MemoryMngr.h"
+
 struct CapacitorSpecification
 {
     float capacitance;
@@ -70,12 +72,12 @@ public:
 class SerialCapacitors : public CapacitorBase
 {
 private:
-    std::vector<std::unique_ptr<CapacitorInterface>> caps;
+    std::vector<CapacitorPtr> caps;
 
     float total_capacitance();
 
 public:
-    SerialCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps);
+    SerialCapacitors(std::string name, std::vector<CapacitorPtr> &&caps);
     void calculate(float frequency, float current) override;
     ~SerialCapacitors() {}
 };
@@ -83,11 +85,11 @@ public:
 class ParallelCapacitors : public CapacitorBase
 {
 private:
-    std::vector<std::unique_ptr<CapacitorInterface>> caps;
+    std::vector<CapacitorPtr> caps;
     float total_capacitance();
 
 public:
-    ParallelCapacitors(std::string name, std::vector<std::unique_ptr<CapacitorInterface>> &&caps);
+    ParallelCapacitors(std::string name, std::vector<CapacitorPtr> &&caps);
     void calculate(float frequency, float current) override;
     ~ParallelCapacitors(){};
 };

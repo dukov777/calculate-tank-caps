@@ -9,6 +9,7 @@ set(SOURCE_FILES
     src/TankCalculator.cpp
     src/Capacitors.cpp
     src/MonitorDecorator.cpp
+    src/MemoryMngr.cpp
 )
 # compile the source files
 add_executable(calculate-tank-caps ${SOURCE_FILES})
